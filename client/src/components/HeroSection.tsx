@@ -53,10 +53,14 @@ export default function HeroSection() {
                 {t(language, 'hero.cta_primary')}
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
-              <button className="btn-outline inline-flex items-center justify-center gap-2">
+              <a
+                href="/CVPatriciaBustosPaco.pdf"
+                download="CVPatriciaBustosPaco.pdf"
+                className="btn-outline inline-flex items-center justify-center gap-2"
+              >
                 <Download className="w-5 h-5" />
                 {language === 'ca' ? 'Descarregar CV' : 'Descargar CV'}
-              </button>
+              </a>
             </div>
 
             {/* Stats */}
