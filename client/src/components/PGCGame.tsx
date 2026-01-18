@@ -2,7 +2,7 @@
 
 import { useLanguage } from '@/contexts/LanguageContext';
 import { t, getSection } from '@/lib/i18n';
-import { RotateCcw, Trophy, TrendingUp, Award, Target, Clock, Zap } from 'lucide-react';
+import { RotateCcw, Trophy, TrendingUp, Award, Target, Clock, Zap, Zap as Lightning } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 interface Question {
@@ -26,6 +26,9 @@ interface GameStats {
   totalQuestions: number;
   correctAnswers: number;
   gameHistory: GameRecord[];
+  easyBestScore?: number;
+  mediumBestScore?: number;
+  hardBestScore?: number;
 }
 
 interface GameRecord {
@@ -35,15 +38,17 @@ interface GameRecord {
   percentage: number;
   duration: number;
   streak: number;
+  difficulty: 'easy' | 'medium' | 'hard';
 }
 
-const STORAGE_KEY = 'pgc_game_stats_v2';
+const STORAGE_KEY = 'pgc_game_stats_v3';
 
 export default function PGCGame() {
   const { language } = useLanguage();
   const game = getSection(language, 'tools')?.pgc_game;
   
   const [gameStarted, setGameStarted] = useState(false);
+  const [difficultySelected, setDifficultySelected] = useState<'easy' | 'medium' | 'hard' | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
   const [currentStreak, setCurrentStreak] = useState(0);
@@ -63,12 +68,15 @@ export default function PGCGame() {
     totalQuestions: 0,
     correctAnswers: 0,
     gameHistory: [],
+    easyBestScore: 0,
+    mediumBestScore: 0,
+    hardBestScore: 0,
   });
   const [showNewRecord, setShowNewRecord] = useState(false);
   const [showTimeline, setShowTimeline] = useState(false);
 
-  // Base de datos expandida de preguntas (40+ cuentas PGC)
-  const questions: Question[] = [
+  // Base de datos completa de preguntas (40+ cuentas PGC)
+  const allQuestions: Question[] = [
     {
       id: 1,
       question: language === 'ca' 
@@ -791,6 +799,13 @@ export default function PGCGame() {
     },
   ];
 
+  // Filtrar preguntas según dificultad seleccionada
+  const getQuestionsByDifficulty = (difficulty: 'easy' | 'medium' | 'hard') => {
+    return allQuestions.filter(q => q.difficulty === difficulty);
+  };
+
+  const questions = difficultySelected ? getQuestionsByDifficulty(difficultySelected) : [];
+
   // Cargar estadísticas al iniciar
   useEffect(() => {
     const savedStats = localStorage.getItem(STORAGE_KEY);
@@ -846,6 +861,11 @@ export default function PGCGame() {
     const newAverageScore = newTotalScore / newTotalGames;
     const percentage = Math.round((score / questions.length) * 100);
 
+    // Actualizar mejor puntuación por dificultad
+    const difficultyKey = `${difficultySelected}BestScore` as keyof GameStats;
+    const currentDifficultyBest = (stats[difficultyKey] as number) || 0;
+    const newDifficultyBest = Math.max(currentDifficultyBest, score);
+
     const gameRecord: GameRecord = {
       date: new Date().toISOString(),
       score: score,
@@ -853,6 +873,7 @@ export default function PGCGame() {
       percentage: percentage,
       duration: duration,
       streak: currentStreak,
+      difficulty: difficultySelected || 'easy',
     };
 
     const newStats: GameStats = {
@@ -866,6 +887,9 @@ export default function PGCGame() {
       totalQuestions: newTotalQuestions,
       correctAnswers: newCorrectAnswers,
       gameHistory: [gameRecord, ...stats.gameHistory.slice(0, 9)],
+      easyBestScore: difficultySelected === 'easy' ? newDifficultyBest : stats.easyBestScore,
+      mediumBestScore: difficultySelected === 'medium' ? newDifficultyBest : stats.mediumBestScore,
+      hardBestScore: difficultySelected === 'hard' ? newDifficultyBest : stats.hardBestScore,
     };
 
     const isNewRecord = score > stats.bestScore;
@@ -879,6 +903,7 @@ export default function PGCGame() {
 
   const handleRestart = () => {
     setGameStarted(false);
+    setDifficultySelected(null);
     setCurrentQuestion(0);
     setScore(0);
     setCurrentStreak(0);
@@ -886,6 +911,28 @@ export default function PGCGame() {
     setShowExplanation(false);
     setGameFinished(false);
     setShowNewRecord(false);
+  };
+
+  const getDifficultyColor = (difficulty: 'easy' | 'medium' | 'hard') => {
+    switch (difficulty) {
+      case 'easy':
+        return 'text-green-500 border-green-500 bg-green-500/10';
+      case 'medium':
+        return 'text-yellow-500 border-yellow-500 bg-yellow-500/10';
+      case 'hard':
+        return 'text-red-500 border-red-500 bg-red-500/10';
+    }
+  };
+
+  const getDifficultyLabel = (difficulty: 'easy' | 'medium' | 'hard') => {
+    switch (difficulty) {
+      case 'easy':
+        return language === 'ca' ? 'Fàcil' : 'Fácil';
+      case 'medium':
+        return language === 'ca' ? 'Mitjà' : 'Medio';
+      case 'hard':
+        return language === 'ca' ? 'Difícil' : 'Difícil';
+    }
   };
 
   const getBadge = () => {
@@ -918,7 +965,130 @@ export default function PGCGame() {
       : '¡Sigue intentándolo! ¡Cada partida te hace mejor!';
   };
 
-  const isNewRecordScore = score > stats.bestScore && stats.totalGames > 0;
+  // Pantalla de selección de dificultad
+  if (gameStarted && !difficultySelected) {
+    const badge = getBadge();
+    
+    return (
+      <div className="space-y-6 text-center">
+        <div>
+          <h3 className="text-2xl font-bold text-primary mb-2">
+            {language === 'ca' ? 'Selecciona la Dificultat' : 'Selecciona la Dificultad'}
+          </h3>
+          <p className="text-foreground/70">
+            {language === 'ca' 
+              ? 'Tria el nivell que millor s\'adapta a les teves habilitats'
+              : 'Elige el nivel que mejor se adapte a tus habilidades'}
+          </p>
+        </div>
+
+        {/* Estadísticas por dificultad */}
+        {stats.totalGames > 0 && (
+          <div className="bg-gradient-to-br from-primary/5 to-accent/5 rounded-lg p-6 border-2 border-primary/10">
+            <p className="text-sm font-semibold text-foreground/70 mb-4">
+              {language === 'ca' ? 'Els teus millors resultats' : 'Tus mejores resultados'}
+            </p>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-green-500/10 border border-green-500 rounded-lg p-3">
+                <p className="text-xs text-foreground/60 mb-1">
+                  {language === 'ca' ? 'Fàcil' : 'Fácil'}
+                </p>
+                <p className="text-lg font-bold text-green-500">{stats.easyBestScore || '-'}</p>
+              </div>
+              <div className="bg-yellow-500/10 border border-yellow-500 rounded-lg p-3">
+                <p className="text-xs text-foreground/60 mb-1">
+                  {language === 'ca' ? 'Mitjà' : 'Medio'}
+                </p>
+                <p className="text-lg font-bold text-yellow-500">{stats.mediumBestScore || '-'}</p>
+              </div>
+              <div className="bg-red-500/10 border border-red-500 rounded-lg p-3">
+                <p className="text-xs text-foreground/60 mb-1">
+                  {language === 'ca' ? 'Difícil' : 'Difícil'}
+                </p>
+                <p className="text-lg font-bold text-red-500">{stats.hardBestScore || '-'}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Botones de dificultad */}
+        <div className="space-y-3 py-8">
+          <button
+            onClick={() => {
+              setDifficultySelected('easy');
+              setGameStartTime(Date.now());
+            }}
+            className="w-full p-6 rounded-lg border-2 border-green-500 bg-green-500/10 hover:bg-green-500/20 transition-colors text-left"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xl font-bold text-green-600">
+                  {language === 'ca' ? '🌱 Fàcil' : '🌱 Fácil'}
+                </p>
+                <p className="text-sm text-foreground/70 mt-1">
+                  {language === 'ca' 
+                    ? 'Perfecte per a principiants. 15 preguntes bàsiques'
+                    : 'Perfecto para principiantes. 15 preguntas básicas'}
+                </p>
+              </div>
+              <span className="text-3xl">→</span>
+            </div>
+          </button>
+
+          <button
+            onClick={() => {
+              setDifficultySelected('medium');
+              setGameStartTime(Date.now());
+            }}
+            className="w-full p-6 rounded-lg border-2 border-yellow-500 bg-yellow-500/10 hover:bg-yellow-500/20 transition-colors text-left"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xl font-bold text-yellow-600">
+                  {language === 'ca' ? '⚡ Mitjà' : '⚡ Medio'}
+                </p>
+                <p className="text-sm text-foreground/70 mt-1">
+                  {language === 'ca' 
+                    ? 'Per a usuaris amb experiència. 15 preguntes intermèdies'
+                    : 'Para usuarios con experiencia. 15 preguntas intermedias'}
+                </p>
+              </div>
+              <span className="text-3xl">→</span>
+            </div>
+          </button>
+
+          <button
+            onClick={() => {
+              setDifficultySelected('hard');
+              setGameStartTime(Date.now());
+            }}
+            className="w-full p-6 rounded-lg border-2 border-red-500 bg-red-500/10 hover:bg-red-500/20 transition-colors text-left"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xl font-bold text-red-600">
+                  {language === 'ca' ? '🔥 Difícil' : '🔥 Difícil'}
+                </p>
+                <p className="text-sm text-foreground/70 mt-1">
+                  {language === 'ca' 
+                    ? 'Per a experts. 10 preguntes avançades'
+                    : 'Para expertos. 10 preguntas avanzadas'}
+                </p>
+              </div>
+              <span className="text-3xl">→</span>
+            </div>
+          </button>
+        </div>
+
+        <button
+          onClick={handleRestart}
+          className="w-full px-4 py-2 bg-secondary hover:bg-secondary/80 text-foreground rounded-lg transition-colors"
+        >
+          {language === 'ca' ? 'Enrere' : 'Atrás'}
+        </button>
+      </div>
+    );
+  }
 
   if (!gameStarted) {
     const badge = getBadge();
@@ -1009,9 +1179,14 @@ export default function PGCGame() {
                 {stats.gameHistory.map((record, idx) => (
                   <div key={idx} className="bg-card/30 rounded-lg p-3 text-left text-xs">
                     <div className="flex justify-between items-center">
-                      <span className="font-semibold text-foreground">
-                        {new Date(record.date).toLocaleDateString(language === 'ca' ? 'ca-ES' : 'es-ES')}
-                      </span>
+                      <div>
+                        <span className="font-semibold text-foreground">
+                          {new Date(record.date).toLocaleDateString(language === 'ca' ? 'ca-ES' : 'es-ES')}
+                        </span>
+                        <span className="ml-2 text-foreground/60 text-xs">
+                          ({getDifficultyLabel(record.difficulty)})
+                        </span>
+                      </div>
                       <span className={`font-bold ${record.percentage >= 80 ? 'text-green-500' : record.percentage >= 60 ? 'text-yellow-500' : 'text-red-500'}`}>
                         {record.percentage}%
                       </span>
@@ -1033,10 +1208,7 @@ export default function PGCGame() {
             {language === 'ca' ? 'Joc Interactiu' : 'Juego Interactivo'}
           </p>
           <button
-            onClick={() => {
-              setGameStarted(true);
-              setGameStartTime(Date.now());
-            }}
+            onClick={() => setGameStarted(true)}
             className="btn-primary"
           >
             {game?.start_game}
@@ -1045,15 +1217,15 @@ export default function PGCGame() {
 
         <div className="grid grid-cols-3 gap-4 text-center">
           <div className="p-4 bg-secondary rounded-lg">
-            <p className="text-2xl font-bold text-accent">{questions.length}</p>
+            <p className="text-2xl font-bold text-accent">{allQuestions.length}</p>
             <p className="text-xs text-foreground/60">
               {language === 'ca' ? 'Preguntes' : 'Preguntas'}
             </p>
           </div>
           <div className="p-4 bg-secondary rounded-lg">
-            <p className="text-2xl font-bold text-primary">∞</p>
+            <p className="text-2xl font-bold text-primary">3</p>
             <p className="text-xs text-foreground/60">
-              {language === 'ca' ? 'Intents' : 'Intentos'}
+              {language === 'ca' ? 'Nivells' : 'Niveles'}
             </p>
           </div>
           <div className="p-4 bg-secondary rounded-lg">
@@ -1089,8 +1261,11 @@ export default function PGCGame() {
           
           <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg p-8 border-2 border-primary/20">
             <p className="text-6xl font-bold text-accent mb-2">{percentage}%</p>
-            <p className="text-2xl font-semibold text-primary mb-4">
+            <p className="text-2xl font-semibold text-primary mb-2">
               {score} / {questions.length}
+            </p>
+            <p className={`text-sm font-semibold mb-4 ${getDifficultyColor(difficultySelected || 'easy')}`}>
+              {getDifficultyLabel(difficultySelected || 'easy')}
             </p>
             <p className="text-lg text-foreground/70">
               {getMotivationalMessage(percentage)}
@@ -1139,7 +1314,12 @@ export default function PGCGame() {
           <p className="text-sm font-semibold text-foreground">
             {language === 'ca' ? 'Pregunta' : 'Pregunta'} {currentQuestion + 1} / {questions.length}
           </p>
-          <p className="text-sm font-semibold text-accent">{score} punts</p>
+          <div className="flex items-center gap-2">
+            <span className={`text-xs font-semibold px-2 py-1 rounded ${getDifficultyColor(difficultySelected || 'easy')}`}>
+              {getDifficultyLabel(difficultySelected || 'easy')}
+            </span>
+            <p className="text-sm font-semibold text-accent">{score} punts</p>
+          </div>
         </div>
         <div className="w-full bg-secondary rounded-full h-2">
           <div
