@@ -21,8 +21,8 @@ export const translations = {
     // Hero Section
     hero: {
       title: 'Patricia Bustos Paco',
-      subtitle: 'Administrativa Contable & Especialista en IA',
-      description: 'Transformant la gestió administrativa i fiscal mitjançant intel·ligència artificial. Especialitzada en contabilitat, ERP i automatització.',
+      subtitle: 'Administrativa Comptable & Especialista en IA',
+      description: 'Transformant la gestió administrativa i fiscal mitjançant intel·ligència artificial. Especialitzada en comptabilitat, ERP i automatització.',
       cta_primary: 'Explora les Eines',
       cta_secondary: 'Llegeix el Blog',
     },
@@ -38,7 +38,7 @@ export const translations = {
           year: '2025',
           company: 'Administrativa Comptable Valles 222 SL',
           role: 'Administrativa Comptable',
-          description: 'Facturació, gestió de moviments hoteleros, comptabilitat general i gestió de tesoreria amb SAGE 200.',
+          description: 'Facturació, gestió de moviments hoteleros, comptabilitat general i gestió de tresoreria amb SAGE 200.',
         },
         {
           year: '2008-2023',
