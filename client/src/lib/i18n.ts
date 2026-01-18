@@ -22,7 +22,7 @@ export const translations = {
     hero: {
       title: 'Patricia Bustos Paco',
       subtitle: 'Administrativa Contable & Especialista en IA',
-      description: 'Transformant la gestió administrativa i fiscal mitjançant intel·ligència artificial. +15 anys d\'experiència en contabilitat, ERP i automatització.',
+      description: 'Transformant la gestió administrativa i fiscal mitjançant intel·ligència artificial. Especialitzada en contabilitat, ERP i automatització.',
       cta_primary: 'Explora les Eines',
       cta_secondary: 'Llegeix el Blog',
     },
@@ -233,7 +233,7 @@ export const translations = {
     hero: {
       title: 'Patricia Bustos Paco',
       subtitle: 'Administrativa Contable & Especialista en IA',
-      description: 'Transformando la gestión administrativa y fiscal mediante inteligencia artificial. +15 años de experiencia en contabilidad, ERP y automatización.',
+      description: 'Transformando la gestión administrativa y fiscal mediante inteligencia artificial. Especializada en contabilidad, ERP y automatización.',
       cta_primary: 'Explora las Herramientas',
       cta_secondary: 'Lee el Blog',
     },
