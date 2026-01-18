@@ -3,7 +3,8 @@
 import { useLanguage } from '@/contexts/LanguageContext';
 import { t, getSection } from '@/lib/i18n';
 import { Search, Gamepad2, AlertCircle, Mail, Filter, X } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import emailjs from '@emailjs/browser';
 import PGCGame from './PGCGame';
 
 interface PGCAccount {
@@ -165,21 +166,35 @@ export default function ToolsSection() {
     return matchesSearch && matchesGroup && matchesNature;
   });
 
+  // Inicializar EmailJS al cargar el componente
+  useEffect(() => {
+    emailjs.init('d1TYhPVvJKmGLJ6Yd');
+  }, []);
+
   const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setContactStatus('loading');
     
     try {
-      // Simular envío (en producción, conectar con un backend real)
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Aquí iría la llamada a un API real
-      console.log('Mensaje enviado:', contactForm);
+      // Enviar email usando EmailJS
+      await emailjs.send(
+        'service_patricia_bustos',
+        'template_contact_form',
+        {
+          to_email: 'patriadmconta@outlook.com',
+          from_name: contactForm.name,
+          from_email: contactForm.email,
+          message: contactForm.message,
+          reply_to: contactForm.email,
+        },
+        'd1TYhPVvJKmGLJ6Yd'
+      );
       
       setContactStatus('success');
       setContactForm({ name: '', email: '', message: '' });
       setTimeout(() => setContactStatus('idle'), 3000);
     } catch (error) {
+      console.error('Error al enviar email:', error);
       setContactStatus('error');
       setTimeout(() => setContactStatus('idle'), 3000);
     }
