@@ -1,6 +1,6 @@
 import { useLanguage } from '@/contexts/LanguageContext';
 import { t } from '@/lib/i18n';
-import { ArrowRight, Download } from 'lucide-react';
+import { Download } from 'lucide-react';
 
 export default function HeroSection() {
   const { language } = useLanguage();
@@ -51,14 +51,10 @@ export default function HeroSection() {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <button className="btn-primary inline-flex items-center justify-center gap-2 group">
-                {t(language, 'hero.cta_primary')}
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </button>
               <a
                 href="/CVPatriciaBustosPaco.pdf"
                 download="CVPatriciaBustosPaco.pdf"
-                className="btn-outline inline-flex items-center justify-center gap-2"
+                className="btn-primary inline-flex items-center justify-center gap-2"
               >
                 <Download className="w-5 h-5" />
                 {language === 'ca' ? 'Descarregar CV' : 'Descargar CV'}

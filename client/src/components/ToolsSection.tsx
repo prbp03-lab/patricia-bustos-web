@@ -27,13 +27,17 @@ export default function ToolsSection() {
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
   const [contactStatus, setContactStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
-  // Base de datos completa del PGC (100+ cuentas)
+  // Base de datos completa del PGC (100+ cuentas) - Plan General Contable Español
   const pgcData: PGCAccount[] = [
     // Grupo 1: Patrimonio
     { code: '100', name: 'Capital Social', nameEs: 'Capital Social', group: '1', nature: 'Acreedora', category: 'Patrimonio' },
     { code: '101', name: 'Fons de Comerç', nameEs: 'Fondo de Comercio', group: '1', nature: 'Deudora', category: 'Patrimonio' },
     { code: '102', name: 'Accions o Participacions del Patrimoni Net', nameEs: 'Acciones o Participaciones del Patrimonio Neto', group: '1', nature: 'Deudora', category: 'Patrimonio' },
+    { code: '103', name: 'Subvencions de Capital', nameEs: 'Subvenciones de Capital', group: '1', nature: 'Acreedora', category: 'Patrimonio' },
+    { code: '104', name: 'Donacions i Legats', nameEs: 'Donaciones y Legados', group: '1', nature: 'Acreedora', category: 'Patrimonio' },
     { code: '110', name: 'Reserves Voluntàries', nameEs: 'Reservas Voluntarias', group: '1', nature: 'Acreedora', category: 'Patrimonio' },
+    { code: '111', name: 'Reserves per a Contingències', nameEs: 'Reservas para Contingencias', group: '1', nature: 'Acreedora', category: 'Patrimonio' },
+    { code: '112', name: 'Reserves de Revalorització', nameEs: 'Reservas de Revalorización', group: '1', nature: 'Acreedora', category: 'Patrimonio' },
     { code: '113', name: 'Reserves Estatutàries', nameEs: 'Reservas Estatutarias', group: '1', nature: 'Acreedora', category: 'Patrimonio' },
     { code: '114', name: 'Reserves per a Accions de la Pròpia Empresa', nameEs: 'Reservas para Acciones de la Propia Empresa', group: '1', nature: 'Acreedora', category: 'Patrimonio' },
     { code: '115', name: 'Reserves per a Fons de Comerç', nameEs: 'Reservas para Fondo de Comercio', group: '1', nature: 'Acreedora', category: 'Patrimonio' },
