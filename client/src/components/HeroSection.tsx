@@ -14,6 +14,8 @@ export default function HeroSection() {
         style={{
           backgroundImage: 'url(/images/hero-background.png)',
           backgroundAttachment: 'fixed',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
         }}
       />
 
@@ -95,7 +97,7 @@ export default function HeroSection() {
               {/* Image Container */}
               <div className="relative w-full h-full rounded-3xl overflow-hidden border-4 border-accent/30 shadow-2xl">
                 <img
-                  src="/images/profile-accent.png"
+                  src="https://imgur.com/wYSV3zS.jpg"
                   alt="Patricia Bustos Paco"
                   className="w-full h-full object-cover"
                 />

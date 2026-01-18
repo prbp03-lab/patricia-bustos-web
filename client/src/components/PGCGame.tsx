@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { t, getSection } from '@/lib/i18n';
-import { RotateCcw, Volume2 } from 'lucide-react';
+import { RotateCcw, Volume2, Trophy, TrendingUp, Award, Target } from 'lucide-react';
 
 interface Question {
   id: number;
@@ -11,6 +11,17 @@ interface Question {
   explanation: string;
 }
 
+interface GameStats {
+  totalGames: number;
+  totalScore: number;
+  bestScore: number;
+  bestStreak: number;
+  lastPlayed: string;
+  averageScore: number;
+}
+
+const STORAGE_KEY = 'pgc_game_stats';
+
 export default function PGCGame() {
   const { language } = useLanguage();
   const game = getSection(language, 'tools')?.pgc_game;
@@ -18,9 +29,33 @@ export default function PGCGame() {
   const [gameStarted, setGameStarted] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
+  const [currentStreak, setCurrentStreak] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
   const [gameFinished, setGameFinished] = useState(false);
+  const [stats, setStats] = useState<GameStats>({
+    totalGames: 0,
+    totalScore: 0,
+    bestScore: 0,
+    bestStreak: 0,
+    lastPlayed: '',
+    averageScore: 0,
+  });
+  const [showNewRecord, setShowNewRecord] = useState(false);
+
+  // Cargar estadísticas al iniciar
+  useEffect(() => {
+    const savedStats = localStorage.getItem(STORAGE_KEY);
+    if (savedStats) {
+      setStats(JSON.parse(savedStats));
+    }
+  }, []);
+
+  // Guardar estadísticas
+  const saveStats = (newStats: GameStats) => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newStats));
+    setStats(newStats);
+  };
 
   // Preguntas del juego (bilingüe)
   const questions: Question[] = [
@@ -108,9 +143,15 @@ export default function PGCGame() {
 
   const handleAnswer = (index: number) => {
     setSelectedAnswer(index);
-    if (index === questions[currentQuestion].correct) {
+    const isCorrect = index === questions[currentQuestion].correct;
+    
+    if (isCorrect) {
       setScore(score + 1);
+      setCurrentStreak(currentStreak + 1);
+    } else {
+      setCurrentStreak(0);
     }
+    
     setShowExplanation(true);
   };
 
@@ -120,20 +161,80 @@ export default function PGCGame() {
       setSelectedAnswer(null);
       setShowExplanation(false);
     } else {
-      setGameFinished(true);
+      finishGame();
     }
+  };
+
+  const finishGame = () => {
+    const newTotalGames = stats.totalGames + 1;
+    const newTotalScore = stats.totalScore + score;
+    const newBestScore = Math.max(stats.bestScore, score);
+    const newBestStreak = Math.max(stats.bestStreak, currentStreak);
+    const newAverageScore = newTotalScore / newTotalGames;
+
+    const newStats: GameStats = {
+      totalGames: newTotalGames,
+      totalScore: newTotalScore,
+      bestScore: newBestScore,
+      bestStreak: newBestStreak,
+      lastPlayed: new Date().toISOString(),
+      averageScore: Math.round(newAverageScore * 10) / 10,
+    };
+
+    saveStats(newStats);
+    
+    // Mostrar animación de nuevo récord
+    if (score > stats.bestScore && stats.bestScore > 0) {
+      setShowNewRecord(true);
+    }
+    
+    setGameFinished(true);
   };
 
   const handleRestart = () => {
     setGameStarted(false);
     setCurrentQuestion(0);
     setScore(0);
+    setCurrentStreak(0);
     setSelectedAnswer(null);
     setShowExplanation(false);
     setGameFinished(false);
+    setShowNewRecord(false);
+  };
+
+  const getBadge = () => {
+    const totalCorrect = stats.totalScore;
+    if (totalCorrect >= 100) return { icon: '🏆', text: language === 'ca' ? 'Mestre PGC' : 'Maestro PGC', color: 'text-yellow-500' };
+    if (totalCorrect >= 50) return { icon: '🥇', text: language === 'ca' ? 'Expert' : 'Experto', color: 'text-orange-500' };
+    if (totalCorrect >= 25) return { icon: '🥈', text: language === 'ca' ? 'Avançat' : 'Avanzado', color: 'text-gray-400' };
+    if (totalCorrect >= 10) return { icon: '🥉', text: language === 'ca' ? 'Intermedi' : 'Intermedio', color: 'text-amber-600' };
+    return { icon: '🌱', text: language === 'ca' ? 'Principiant' : 'Principiante', color: 'text-green-500' };
+  };
+
+  const getMotivationalMessage = (percentage: number) => {
+    if (percentage === 100) {
+      return language === 'ca' 
+        ? '¡Perfecte! Ets un expert del PGC!' 
+        : '¡Perfecto! ¡Eres un experto del PGC!';
+    }
+    if (percentage >= 80) {
+      return language === 'ca'
+        ? '¡Excel·lent! Estàs molt a prop de la perfecció!'
+        : '¡Excelente! ¡Estás muy cerca de la perfección!';
+    }
+    if (percentage >= 60) {
+      return language === 'ca'
+        ? 'Molt bé! Continua practicant per millorar!'
+        : '¡Muy bien! ¡Continúa practicando para mejorar!';
+    }
+    return language === 'ca'
+      ? 'Segueix intentant-ho! Cada partida et fa millor!'
+      : '¡Sigue intentándolo! ¡Cada partida te hace mejor!';
   };
 
   if (!gameStarted) {
+    const badge = getBadge();
+    
     return (
       <div className="space-y-6 text-center">
         <div>
@@ -144,6 +245,63 @@ export default function PGCGame() {
             {game?.description}
           </p>
         </div>
+
+        {/* Estadísticas del jugador */}
+        {stats.totalGames > 0 && (
+          <div className="bg-gradient-to-br from-primary/5 to-accent/5 rounded-lg p-6 border-2 border-primary/10">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <span className={`text-4xl ${badge.color}`}>{badge.icon}</span>
+              <div className="text-left">
+                <p className={`text-lg font-bold ${badge.color}`}>{badge.text}</p>
+                <p className="text-sm text-foreground/60">
+                  {language === 'ca' ? 'El teu nivell actual' : 'Tu nivel actual'}
+                </p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+              <div className="bg-card/50 rounded-lg p-3">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <Trophy className="w-4 h-4 text-accent" />
+                  <p className="text-2xl font-bold text-accent">{stats.bestScore}</p>
+                </div>
+                <p className="text-xs text-foreground/60">
+                  {language === 'ca' ? 'Millor puntuació' : 'Mejor puntuación'}
+                </p>
+              </div>
+              
+              <div className="bg-card/50 rounded-lg p-3">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <Target className="w-4 h-4 text-primary" />
+                  <p className="text-2xl font-bold text-primary">{stats.averageScore}</p>
+                </div>
+                <p className="text-xs text-foreground/60">
+                  {language === 'ca' ? 'Mitjana' : 'Promedio'}
+                </p>
+              </div>
+              
+              <div className="bg-card/50 rounded-lg p-3">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <TrendingUp className="w-4 h-4 text-green-500" />
+                  <p className="text-2xl font-bold text-green-500">{stats.bestStreak}</p>
+                </div>
+                <p className="text-xs text-foreground/60">
+                  {language === 'ca' ? 'Millor ratxa' : 'Mejor racha'}
+                </p>
+              </div>
+              
+              <div className="bg-card/50 rounded-lg p-3">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <Award className="w-4 h-4 text-purple-500" />
+                  <p className="text-2xl font-bold text-purple-500">{stats.totalGames}</p>
+                </div>
+                <p className="text-xs text-foreground/60">
+                  {language === 'ca' ? 'Partides' : 'Partidas'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="py-12 px-6 rounded-lg bg-gradient-to-br from-accent/10 to-primary/10 border-2 border-dashed border-accent/30">
           <div className="text-5xl mb-4">🎮</div>
@@ -184,8 +342,19 @@ export default function PGCGame() {
 
   if (gameFinished) {
     const percentage = Math.round((score / questions.length) * 100);
+    const isNewRecord = score > stats.bestScore - 1 && stats.totalGames > 1;
+    
     return (
       <div className="space-y-6 text-center py-12">
+        {showNewRecord && (
+          <div className="animate-bounce mb-4">
+            <div className="text-6xl mb-2">🎉</div>
+            <p className="text-2xl font-bold text-accent">
+              {language === 'ca' ? '¡Nou rècord!' : '¡Nuevo récord!'}
+            </p>
+          </div>
+        )}
+        
         <div className="text-6xl mb-4">
           {percentage >= 80 ? '🎉' : percentage >= 60 ? '👍' : '💪'}
         </div>
@@ -197,11 +366,23 @@ export default function PGCGame() {
           <p className="text-5xl font-bold text-accent mb-4">
             {score}/{questions.length}
           </p>
-          <p className="text-xl text-foreground/70">
-            {percentage >= 80 && (language === 'ca' ? 'Excel·lent!' : '¡Excelente!')}
-            {percentage >= 60 && percentage < 80 && (language === 'ca' ? 'Molt bé!' : '¡Muy bien!')}
-            {percentage < 60 && (language === 'ca' ? 'Segueix practicant!' : '¡Sigue practicando!')}
+          <p className="text-xl text-foreground/70 mb-2">
+            {getMotivationalMessage(percentage)}
           </p>
+          
+          {/* Comparación con estadísticas */}
+          {stats.totalGames > 1 && (
+            <div className="mt-6 p-4 bg-secondary/50 rounded-lg inline-block">
+              <p className="text-sm text-foreground/70">
+                {language === 'ca' ? 'Millor puntuació: ' : 'Mejor puntuación: '}
+                <span className="font-bold text-accent">{stats.bestScore}/{questions.length}</span>
+              </p>
+              <p className="text-sm text-foreground/70">
+                {language === 'ca' ? 'Mitjana: ' : 'Promedio: '}
+                <span className="font-bold text-primary">{stats.averageScore}/{questions.length}</span>
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="p-6 bg-secondary rounded-lg">
@@ -211,6 +392,25 @@ export default function PGCGame() {
               : 'Has acertado el ' + percentage + '% de las preguntas'
             }
           </p>
+          
+          {/* Progreso hacia el siguiente nivel */}
+          {stats.totalScore < 100 && (
+            <div className="mb-4">
+              <p className="text-xs text-foreground/60 mb-2">
+                {language === 'ca' 
+                  ? `Respostes correctes totals: ${stats.totalScore}/100 per ser Mestre PGC`
+                  : `Respuestas correctas totales: ${stats.totalScore}/100 para ser Maestro PGC`
+                }
+              </p>
+              <div className="w-full bg-background rounded-full h-2">
+                <div 
+                  className="bg-gradient-to-r from-accent to-primary h-full rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min((stats.totalScore / 100) * 100, 100)}%` }}
+                />
+              </div>
+            </div>
+          )}
+          
           <button
             onClick={handleRestart}
             className="btn-primary inline-flex items-center gap-2"
@@ -234,9 +434,16 @@ export default function PGCGame() {
           <span className="text-sm font-semibold text-foreground/70">
             {game?.question} {currentQuestion + 1} {game?.of} {questions.length}
           </span>
-          <span className="text-sm font-semibold text-accent">
-            {game?.score}: {score}
-          </span>
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-semibold text-accent">
+              {game?.score}: {score}
+            </span>
+            {currentStreak > 0 && (
+              <span className="text-sm font-semibold text-green-500 animate-pulse">
+                🔥 {currentStreak}
+              </span>
+            )}
+          </div>
         </div>
         <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
           <div
