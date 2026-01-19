@@ -28,6 +28,11 @@ export default function ToolsSection() {
   const [contactStatus, setContactStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
   // Base de datos completa del PGC (100+ cuentas) - Plan General Contable Español
+  // Cargar artículos de Notion al montar el componente
+  useEffect(() => {
+    console.log('ToolsSection montado');
+  }, []);
+
   const pgcData: PGCAccount[] = [
     // Grupo 1: Patrimonio
     { code: '100', name: 'Capital Social', nameEs: 'Capital Social', group: '1', nature: 'Acreedora', category: 'Patrimonio' },
@@ -180,23 +185,33 @@ export default function ToolsSection() {
     setContactStatus('loading');
     
     try {
-      // Enviar email usando EmailJS
-      await emailjs.send(
-        'service_patricia_bustos',
-        'template_contact_form',
-        {
-          to_email: 'patriadmconta@outlook.com',
-          from_name: contactForm.name,
-          from_email: contactForm.email,
-          message: contactForm.message,
-          reply_to: contactForm.email,
+      // Enviar email usando EmailJS con FormData
+      const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        'd1TYhPVvJKmGLJ6Yd'
-      );
-      
-      setContactStatus('success');
-      setContactForm({ name: '', email: '', message: '' });
-      setTimeout(() => setContactStatus('idle'), 3000);
+        body: JSON.stringify({
+          service_id: 'gmail',
+          template_id: 'template_contact',
+          user_id: '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',
+          template_params: {
+            to_email: 'patriadmconta@outlook.com',
+            from_name: contactForm.name,
+            from_email: contactForm.email,
+            message: contactForm.message,
+            reply_to: contactForm.email,
+          },
+        }),
+      });
+
+      if (response.ok) {
+        setContactStatus('success');
+        setContactForm({ name: '', email: '', message: '' });
+        setTimeout(() => setContactStatus('idle'), 3000);
+      } else {
+        throw new Error('Error en la respuesta del servidor');
+      }
     } catch (error) {
       console.error('Error al enviar email:', error);
       setContactStatus('error');
