@@ -4,7 +4,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { t, getSection } from '@/lib/i18n';
 import { Search, Gamepad2, AlertCircle, Mail, Filter, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import emailjs from '@emailjs/browser';
+// Formulario de contacto usando Formspree
 import PGCGame from './PGCGame';
 
 interface PGCAccount {
@@ -175,47 +175,35 @@ export default function ToolsSection() {
     return matchesSearch && matchesGroup && matchesNature;
   });
 
-  // Inicializar EmailJS al cargar el componente
-  useEffect(() => {
-    emailjs.init('d1TYhPVvJKmGLJ6Yd');
-  }, []);
-
   const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setContactStatus('loading');
     
     try {
-      // Enviar email usando EmailJS con FormData
-      const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      // Enviar usando Formspree (más simple y confiable)
+      const response = await fetch('https://formspree.io/f/xyzgqwvj', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          service_id: 'gmail',
-          template_id: 'template_contact',
-          user_id: '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',
-          template_params: {
-            to_email: 'patriadmconta@outlook.com',
-            from_name: contactForm.name,
-            from_email: contactForm.email,
-            message: contactForm.message,
-            reply_to: contactForm.email,
-          },
+          name: contactForm.name,
+          email: contactForm.email,
+          message: contactForm.message,
         }),
       });
 
       if (response.ok) {
         setContactStatus('success');
         setContactForm({ name: '', email: '', message: '' });
-        setTimeout(() => setContactStatus('idle'), 3000);
+        setTimeout(() => setContactStatus('idle'), 5000);
       } else {
-        throw new Error('Error en la respuesta del servidor');
+        throw new Error('Error al enviar el formulario');
       }
     } catch (error) {
-      console.error('Error al enviar email:', error);
+      console.error('Error al enviar formulario:', error);
       setContactStatus('error');
-      setTimeout(() => setContactStatus('idle'), 3000);
+      setTimeout(() => setContactStatus('idle'), 5000);
     }
   };
 
