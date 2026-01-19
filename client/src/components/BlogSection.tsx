@@ -1,15 +1,19 @@
 import { useLanguage } from '@/contexts/LanguageContext';
 import { t, getSection } from '@/lib/i18n';
 import { BookOpen, FileText, Calendar, Zap } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getNotionArticles, BlogArticle } from '@/lib/notionService';
 
 interface BlogPost {
   id: string;
   title: string;
   category: string;
-  excerpt: string;
+  content: string;
   date: string;
   readTime: string;
+  excerpt: string;
+  published: boolean;
+  featured?: boolean;
   icon: React.ReactNode;
 }
 
@@ -17,54 +21,95 @@ export default function BlogSection() {
   const { language } = useLanguage();
   const blog = getSection(language, 'blog');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Cargar artículos desde Notion
+  useEffect(() => {
+    const loadArticles = async () => {
+      try {
+        const articles = await getNotionArticles();
+        const postsWithIcons: BlogPost[] = articles.map(article => ({
+          ...article,
+          readTime: `${article.readTime} min`,
+          icon: getIconForCategory(article.category),
+        }));
+        setBlogPosts(postsWithIcons);
+      } catch (error) {
+        console.error('Error loading articles:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadArticles();
+  }, []);
 
   const categories = [
-    { id: 'pgc', label: blog.categories?.pgc, icon: FileText, color: 'blue' },
-    { id: 'verifactu', label: blog.categories?.verifactu, icon: Calendar, color: 'green' },
-    { id: 'fiscal_calendar', label: blog.categories?.fiscal_calendar, icon: Calendar, color: 'amber' },
-    { id: 'ia_automation', label: blog.categories?.ia_automation, icon: Zap, color: 'purple' },
+    { id: 'PGC', label: blog.categories?.pgc, icon: FileText, color: 'blue' },
+    { id: 'Verifactu', label: blog.categories?.verifactu, icon: Calendar, color: 'green' },
+    { id: 'Fiscal', label: blog.categories?.fiscal_calendar, icon: Calendar, color: 'amber' },
+    { id: 'IA', label: blog.categories?.ia_automation, icon: Zap, color: 'purple' },
   ];
 
-  // Sample blog posts (placeholder)
-  const blogPosts: BlogPost[] = [
+  // Función para obtener icono según categoría
+  function getIconForCategory(category: string): React.ReactNode {
+    const categoryMap: { [key: string]: React.ReactNode } = {
+      'PGC': <FileText className="w-6 h-6" />,
+      'Verifactu': <Calendar className="w-6 h-6" />,
+      'Fiscal': <Calendar className="w-6 h-6" />,
+      'IA': <Zap className="w-6 h-6" />,
+    };
+    return categoryMap[category] || <BookOpen className="w-6 h-6" />;
+  }
+
+  // Fallback: artículos de ejemplo si Notion no está disponible
+  const fallbackPosts: BlogPost[] = [
     {
       id: '1',
       title: language === 'ca' ? 'Introducció al PGC 2025' : 'Introducción al PGC 2025',
-      category: 'pgc',
+      category: 'PGC',
       excerpt: language === 'ca' 
         ? 'Descobreix les novetats del Pla General Comptable per a 2025 i com adaptar-te als canvis normatius.'
         : 'Descubre las novedades del Plan General Contable para 2025 y cómo adaptarte a los cambios normativos.',
       date: '2025-01-15',
-      readTime: language === 'ca' ? '5 min' : '5 min',
+      readTime: '5 min',
       icon: <FileText className="w-6 h-6" />,
+      published: true,
+      content: '',
     },
     {
       id: '2',
       title: language === 'ca' ? 'Verifactu: Guia Completa' : 'Verifactu: Guía Completa',
-      category: 'verifactu',
+      category: 'Verifactu',
       excerpt: language === 'ca'
         ? 'Tot el que necessites saber sobre la facturació electrònica i els requisits de Verifactu.'
         : 'Todo lo que necesitas saber sobre la facturación electrónica y los requisitos de Verifactu.',
       date: '2025-01-10',
-      readTime: language === 'ca' ? '8 min' : '8 min',
+      readTime: '8 min',
       icon: <Calendar className="w-6 h-6" />,
+      published: true,
+      content: '',
     },
     {
       id: '3',
       title: language === 'ca' ? 'Automatització amb ChatGPT' : 'Automatización con ChatGPT',
-      category: 'ia_automation',
+      category: 'IA',
       excerpt: language === 'ca'
         ? 'Com utilitzar ChatGPT per automatitzar tasques comptables i estalviar temps.'
         : 'Cómo utilizar ChatGPT para automatizar tareas contables y ahorrar tiempo.',
       date: '2025-01-05',
-      readTime: language === 'ca' ? '10 min' : '10 min',
+      readTime: '10 min',
       icon: <Zap className="w-6 h-6" />,
+      published: true,
+      content: '',
     },
   ];
 
+  const displayPosts = blogPosts.length > 0 ? blogPosts : fallbackPosts;
+
   const filteredPosts = selectedCategory
-    ? blogPosts.filter(post => post.category === selectedCategory)
-    : blogPosts;
+    ? displayPosts.filter(post => post.category === selectedCategory)
+    : displayPosts;
 
   return (
     <section id="blog" className="py-16 md:py-24 bg-secondary">
@@ -107,9 +152,22 @@ export default function BlogSection() {
           ))}
         </div>
 
+        {/* Loading State */}
+        {loading && (
+          <div className="text-center py-12">
+            <div className="inline-block">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+            </div>
+            <p className="mt-4 text-foreground/70">
+              {language === 'ca' ? 'Carregant articles...' : 'Cargando artículos...'}
+            </p>
+          </div>
+        )}
+
         {/* Blog Posts Grid */}
+        {!loading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {filteredPosts.map((post) => {
+          {filteredPosts.length > 0 ? filteredPosts.map((post) => {
             const category = categories.find(c => c.id === post.category);
             return (
               <article
@@ -150,22 +208,31 @@ export default function BlogSection() {
                 </a>
               </article>
             );
-          })}
+          }) : (
+            <div className="col-span-full text-center py-12">
+              <p className="text-foreground/70">
+                {language === 'ca' ? 'No hi ha articles disponibles.' : 'No hay artículos disponibles.'}
+              </p>
+            </div>
+          )}
         </div>
+        )}
 
-        {/* Coming Soon Notice */}
-        <div className="text-center p-8 md:p-12 rounded-2xl bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/10">
-          <BookOpen className="w-12 h-12 text-accent mx-auto mb-4" />
-          <p className="text-lg font-semibold text-foreground mb-2">
-            {blog.coming_soon}
-          </p>
-          <p className="text-foreground/70">
-            {language === 'ca'
-              ? 'Més articles sobre IA, contabilitat i automatització fiscal properament.'
-              : 'Más artículos sobre IA, contabilidad y automatización fiscal próximamente.'
-            }
-          </p>
-        </div>
+        {/* Notion Info */}
+        {!loading && blogPosts.length === 0 && (
+          <div className="text-center p-8 md:p-12 rounded-2xl bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/10">
+            <BookOpen className="w-12 h-12 text-accent mx-auto mb-4" />
+            <p className="text-lg font-semibold text-foreground mb-2">
+              {language === 'ca' ? 'Gestiona el blog desde Notion' : 'Gestiona el blog desde Notion'}
+            </p>
+            <p className="text-foreground/70">
+              {language === 'ca'
+                ? 'Añade artículos a tu base de datos de Notion y aparecerán aquí automáticamente.'
+                : 'Añade artículos a tu base de datos de Notion y aparecerán aquí automáticamente.'
+              }
+            </p>
+          </div>
+        )}
       </div>
     </section>
   );
