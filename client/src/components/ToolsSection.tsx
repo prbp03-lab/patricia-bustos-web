@@ -19,13 +19,12 @@ interface PGCAccount {
 export default function ToolsSection() {
   const { language } = useLanguage();
   const tools = getSection(language, 'tools');
-  const [activeTab, setActiveTab] = useState<'pgc' | 'game' | 'alerts' | 'contact'>('pgc');
+  const [activeTab, setActiveTab] = useState<'pgc' | 'game' | 'alerts'>('pgc');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterGroup, setFilterGroup] = useState<string>('');
   const [filterNature, setFilterNature] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
-  const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
-  const [contactStatus, setContactStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+
 
   // Base de datos completa del PGC (100+ cuentas) - Plan General Contable Español
   // Cargar artículos de Notion al montar el componente
@@ -175,37 +174,7 @@ export default function ToolsSection() {
     return matchesSearch && matchesGroup && matchesNature;
   });
 
-  const handleContactSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setContactStatus('loading');
-    
-    try {
-      // Enviar usando Formspree (más simple y confiable)
-      const response = await fetch('https://formspree.io/f/xyzgqwvj', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: contactForm.name,
-          email: contactForm.email,
-          message: contactForm.message,
-        }),
-      });
 
-      if (response.ok) {
-        setContactStatus('success');
-        setContactForm({ name: '', email: '', message: '' });
-        setTimeout(() => setContactStatus('idle'), 5000);
-      } else {
-        throw new Error('Error al enviar el formulario');
-      }
-    } catch (error) {
-      console.error('Error al enviar formulario:', error);
-      setContactStatus('error');
-      setTimeout(() => setContactStatus('idle'), 5000);
-    }
-  };
 
   const toolCards = [
     {
@@ -229,13 +198,7 @@ export default function ToolsSection() {
       icon: AlertCircle,
       color: 'amber',
     },
-    {
-      id: 'contact',
-      title: language === 'ca' ? 'Contacte' : 'Contacto',
-      description: language === 'ca' ? 'Envia\'m un missatge' : 'Envíame un mensaje',
-      icon: Mail,
-      color: 'purple',
-    },
+
   ];
 
   return (
@@ -465,91 +428,7 @@ export default function ToolsSection() {
             </div>
           )}
 
-          {/* Contact Form */}
-          {activeTab === 'contact' && (
-            <div className="space-y-6 max-w-2xl">
-              <div>
-                <h3 className="text-2xl font-bold text-primary mb-2">
-                  {language === 'ca' ? 'Contacte' : 'Contacto'}
-                </h3>
-                <p className="text-foreground/70">
-                  {language === 'ca' 
-                    ? 'Envia\'m un missatge i et respondré al més aviat possible.'
-                    : 'Envíame un mensaje y te responderé lo antes posible.'}
-                </p>
-              </div>
 
-              <form onSubmit={handleContactSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-foreground mb-2">
-                    {language === 'ca' ? 'Nom' : 'Nombre'}
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={contactForm.name}
-                    onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border-2 border-border focus:border-accent focus:outline-none transition-colors"
-                    placeholder={language === 'ca' ? 'El teu nom' : 'Tu nombre'}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-foreground mb-2">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={contactForm.email}
-                    onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border-2 border-border focus:border-accent focus:outline-none transition-colors"
-                    placeholder="teu@email.com"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-foreground mb-2">
-                    {language === 'ca' ? 'Missatge' : 'Mensaje'}
-                  </label>
-                  <textarea
-                    required
-                    value={contactForm.message}
-                    onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
-                    rows={5}
-                    className="w-full px-4 py-3 rounded-lg border-2 border-border focus:border-accent focus:outline-none transition-colors resize-none"
-                    placeholder={language === 'ca' ? 'El teu missatge aquí...' : 'Tu mensaje aquí...'}
-                  />
-                </div>
-
-                {contactStatus === 'success' && (
-                  <div className="p-4 bg-green-100 border-l-4 border-green-500 rounded-lg">
-                    <p className="text-green-900 font-semibold">
-                      {language === 'ca' ? '✓ Missatge enviat correctament!' : '✓ ¡Mensaje enviado correctamente!'}
-                    </p>
-                  </div>
-                )}
-
-                {contactStatus === 'error' && (
-                  <div className="p-4 bg-red-100 border-l-4 border-red-500 rounded-lg">
-                    <p className="text-red-900 font-semibold">
-                      {language === 'ca' ? '✗ Error en l\'enviament del missatge' : '✗ Error al enviar el mensaje'}
-                    </p>
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={contactStatus === 'loading'}
-                  className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {contactStatus === 'loading' 
-                    ? (language === 'ca' ? 'Enviant...' : 'Enviando...')
-                    : (language === 'ca' ? 'Enviar Missatge' : 'Enviar Mensaje')}
-                </button>
-              </form>
-            </div>
-          )}
         </div>
       </div>
     </section>

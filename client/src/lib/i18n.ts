@@ -197,7 +197,7 @@ export const translations = {
     // Footer
     footer: {
       contact_title: 'Contacte',
-      email: 'prpb03@gmail.com',
+      email: 'patriadmconta@outlook.com',
       phone: '678839750',
       location: 'Granollers, 08402',
       follow: 'Segueix-me',
@@ -408,7 +408,7 @@ export const translations = {
     // Footer
     footer: {
       contact_title: 'Contacto',
-      email: 'prpb03@gmail.com',
+      email: 'patriadmconta@outlook.com',
       phone: '678839750',
       location: 'Granollers, 08402',
       follow: 'Sígueme',
