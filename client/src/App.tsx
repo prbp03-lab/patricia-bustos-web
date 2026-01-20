@@ -2,6 +2,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
+import ErrorBoundary from "./components/ErrorBoundary";
 import Header from "./components/Header";
 import HeroSection from "./components/HeroSection";
 import SkillsBento from "./components/SkillsBento";
@@ -22,11 +23,12 @@ import Footer from "./components/Footer";
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="light">
-      <LanguageProvider>
-        <TooltipProvider>
-          <Toaster />
-          <div className="min-h-screen bg-background text-foreground">
+    <ErrorBoundary>
+      <ThemeProvider defaultTheme="light">
+        <LanguageProvider>
+          <TooltipProvider>
+            <Toaster />
+            <div className="min-h-screen bg-background text-foreground">
             {/* Header con navegación responsiva y toggle de idioma */}
             <Header />
 
@@ -51,9 +53,10 @@ function App() {
             {/* Footer con contacto e información */}
             <Footer />
           </div>
-        </TooltipProvider>
-      </LanguageProvider>
-    </ThemeProvider>
+          </TooltipProvider>
+        </LanguageProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 

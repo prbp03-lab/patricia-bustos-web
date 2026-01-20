@@ -13,6 +13,7 @@ export default function Header() {
     { key: 'about', label: t(language, 'header.about'), href: '#about' },
     { key: 'blog', label: t(language, 'header.blog'), href: '#blog' },
     { key: 'tools', label: t(language, 'header.tools'), href: '#tools' },
+    { key: 'contact', label: t(language, 'header.contact'), href: '#contact' },
   ];
 
   return (

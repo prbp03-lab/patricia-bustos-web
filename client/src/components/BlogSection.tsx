@@ -1,8 +1,8 @@
 import { useLanguage } from '@/contexts/LanguageContext';
 import { t, getSection } from '@/lib/i18n';
 import { BookOpen, FileText, Calendar, Zap } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { getNotionArticles, BlogArticle } from '@/lib/notionService';
+import { useState } from 'react';
+import { trpc } from '@/lib/trpc';
 
 interface BlogPost {
   id: string;
@@ -21,28 +21,15 @@ export default function BlogSection() {
   const { language } = useLanguage();
   const blog = getSection(language, 'blog');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  // Cargar artículos desde Notion
-  useEffect(() => {
-    const loadArticles = async () => {
-      try {
-        const articles = await getNotionArticles();
-        const postsWithIcons: BlogPost[] = articles.map(article => ({
-          ...article,
-          readTime: `${article.readTime} min`,
-          icon: getIconForCategory(article.category),
-        }));
-        setBlogPosts(postsWithIcons);
-      } catch (error) {
-        console.error('Error loading articles:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadArticles();
-  }, []);
+  // Cargar artículos desde tRPC (que obtiene de Notion en el servidor)
+  const { data: articles = [], isLoading: loading } = trpc.blog.articles.useQuery();
+
+  const blogPosts: BlogPost[] = articles.map(article => ({
+    ...article,
+    readTime: `${article.readTime} min`,
+    icon: getIconForCategory(article.category),
+  }));
 
   const categories = [
     { id: 'PGC', label: blog.categories?.pgc, icon: FileText, color: 'blue' },
@@ -58,6 +45,8 @@ export default function BlogSection() {
       'Verifactu': <Calendar className="w-6 h-6" />,
       'Fiscal': <Calendar className="w-6 h-6" />,
       'IA': <Zap className="w-6 h-6" />,
+      'Tecnología': <Zap className="w-6 h-6" />,
+      'Fiscalidad': <Calendar className="w-6 h-6" />,
     };
     return categoryMap[category] || <BookOpen className="w-6 h-6" />;
   }
